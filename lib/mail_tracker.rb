@@ -63,10 +63,12 @@ module MailTracker
 		attr_accessor :data
 
 		after_save do
-			attachment_path = "#{Rails.root}/public/mail_tracker_attachments/#{self.mailer_tracker.id}"
-			FileUtils.mkdir_p(attachment_path) unless File.exist?(attachment_path)
+			if self.mailer_tracker
+				attachment_path = "#{Rails.root}/public/mail_tracker_attachments/#{self.mailer_tracker.id}"
+				FileUtils.mkdir_p(attachment_path) unless File.exist?(attachment_path)
 
-			File.open("#{attachment_path}/#{self.filename}", "w+b", 0644) { |f| f.write @data }
+				File.open("#{attachment_path}/#{self.filename}", "w+b", 0644) { |f| f.write @data }
+			end
 		end
 
 		def data=i
@@ -90,9 +92,10 @@ module MailTracker
 					:subject => message.subject.to_s,
 					:message_id => message.message_id
 				)
+				log.save
 
 				message.attachments.each { |attachment|
-					log.attachments.build(
+					log.attachments.create(
 						content_id: attachment.content_id,
 						filename: attachment.filename,
 						content_type: attachment.content_type,
@@ -102,8 +105,6 @@ module MailTracker
 						data: attachment.body.decoded,
 					)
 				}
-
-				log.save
 			end
 		end
 	end
